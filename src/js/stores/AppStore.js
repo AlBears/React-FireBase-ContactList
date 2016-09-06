@@ -18,6 +18,10 @@ var AppStore = assign({}, EventEmitter.prototype, {
 	setContacts: function(contacts){
 		_contacts = contacts;
 	},
+	removeContact: function(contactId){
+		var index = _contacts.findIndex(x => x.id === contactId);
+		_contacts.splice(index, 1);
+	},
 	emitChange: function(){
 		this.emit(CHANGE_EVENT);
 	},
@@ -51,6 +55,19 @@ AppDispatcher.register(function(payload){
 
 			// Store save
 			AppStore.setContacts(action.contacts);
+
+			//Emit change
+			AppStore.emit(CHANGE_EVENT);
+			break;
+
+		case AppConstants.REMOVE_CONTACT:
+			console.log('Deleting contact...');
+
+			// Store Remove
+			AppStore.removeContact(action.contactId);
+
+			//API Remove
+			AppAPI.removeContact(action.contactId);
 
 			//Emit change
 			AppStore.emit(CHANGE_EVENT);

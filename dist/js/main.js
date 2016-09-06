@@ -20417,11 +20417,17 @@ var AppActions = {
       actionType: AppConstants.RECEIVE_CONTACTS,
       contacts: contacts
     });
+  },
+  removeContact: function(contactId){
+    AppDispatcher.handleViewAction({
+      actionType: AppConstants.REMOVE_CONTACT,
+      contactId: contactId
+    });
   }
 }
 
 module.exports = AppActions;
-},{"../constants/AppConstants":169,"../dispatcher/AppDispatcher":170}],167:[function(require,module,exports){
+},{"../constants/AppConstants":171,"../dispatcher/AppDispatcher":172}],167:[function(require,module,exports){
 var React = require('react');
 var AppActions = require('../actions/AppActions');
 var AppStore = require('../stores/AppStore');
@@ -20459,11 +20465,12 @@ var AddForm = React.createClass({displayName: "AddForm",
 
 module.exports = AddForm;
 
-},{"../actions/AppActions":166,"../stores/AppStore":172,"react":165}],168:[function(require,module,exports){
+},{"../actions/AppActions":166,"../stores/AppStore":174,"react":165}],168:[function(require,module,exports){
 var React = require('react');
 var AppActions = require('../actions/AppActions');
 var AppStore = require('../stores/AppStore');
 var AddForm = require('./AddForm.js');
+var ContactList = require('./ContactList.js');
 
 function getAppState(){
 	return {
@@ -20485,10 +20492,10 @@ var App = React.createClass({displayName: "App",
 	},
 
 	render: function(){
-		console.log(this.state.contacts);
 		return(
 			React.createElement("div", null, 
-				React.createElement(AddForm, null)
+				React.createElement(AddForm, null), 
+				React.createElement(ContactList, {contacts: this.state.contacts})
 			)
 		);
 	},
@@ -20500,12 +20507,75 @@ var App = React.createClass({displayName: "App",
 });
 
 module.exports = App;
-},{"../actions/AppActions":166,"../stores/AppStore":172,"./AddForm.js":167,"react":165}],169:[function(require,module,exports){
+},{"../actions/AppActions":166,"../stores/AppStore":174,"./AddForm.js":167,"./ContactList.js":170,"react":165}],169:[function(require,module,exports){
+var React = require('react');
+var AppActions = require('../actions/AppActions');
+var AppStore = require('../stores/AppStore');
+
+var Contact = React.createClass({displayName: "Contact",
+	render: function(){
+		return(
+			React.createElement("tr", null, 
+				React.createElement("td", null, this.props.contact.name), 
+				React.createElement("td", null, this.props.contact.phone), 
+				React.createElement("td", null, this.props.contact.email), 
+				React.createElement("td", null, React.createElement("a", {href: "#", className: "btn btn-default", onClick: this.handleEdit}, "Edit"), " ", React.createElement("a", {href: "#", className: "btn btn-danger", onClick: this.handleRemove.bind(this, this.props.contact.id)}, "Remove"))
+			)
+		);
+	},
+
+	handleRemove: function(i, j){
+		AppActions.removeContact(i);
+	}
+});
+
+module.exports = Contact;
+
+},{"../actions/AppActions":166,"../stores/AppStore":174,"react":165}],170:[function(require,module,exports){
+var React = require('react');
+var AppActions = require('../actions/AppActions');
+var AppStore = require('../stores/AppStore');
+var Contact = require('./Contact.js');
+
+var ContactList = React.createClass({displayName: "ContactList",
+	render: function(){
+    console.log(this.props);
+		return(
+			React.createElement("div", null, 
+				React.createElement("h3", null, "Contacts"), 
+				React.createElement("table", {className: "table table-striped"}, 
+					React.createElement("thead", null, 
+						React.createElement("tr", null, 
+							React.createElement("th", null, "Name"), 
+							React.createElement("th", null, "Phone"), 
+							React.createElement("th", null, "Email"), 
+							React.createElement("th", null)
+						)
+					), 
+					React.createElement("tbody", null, 
+						
+							this.props.contacts.map(function(contact, index){
+								return(
+									React.createElement(Contact, {contact: contact, key: index})
+								)
+							})
+						
+					)
+				)
+			)
+		);
+	}
+});
+
+module.exports = ContactList;
+
+},{"../actions/AppActions":166,"../stores/AppStore":174,"./Contact.js":169,"react":165}],171:[function(require,module,exports){
 module.exports = {
 	SAVE_CONTACT: 'SAVE_CONTACT',
-	RECEIVE_CONTACTS: 'RECEIVE_CONTACTS'
+	RECEIVE_CONTACTS: 'RECEIVE_CONTACTS',
+	REMOVE_CONTACT: 'REMOVE_CONTACT'
 }
-},{}],170:[function(require,module,exports){
+},{}],172:[function(require,module,exports){
 var Dispatcher = require('flux').Dispatcher;
 var assign = require('object-assign');
 
@@ -20521,7 +20591,7 @@ var AppDispatcher = assign(new Dispatcher(),{
 
 module.exports = AppDispatcher;
 
-},{"flux":5,"object-assign":8}],171:[function(require,module,exports){
+},{"flux":5,"object-assign":8}],173:[function(require,module,exports){
 var App = require('./components/App');
 var React = require('react');
 var ReactDOM = require('react-dom');
@@ -20534,7 +20604,7 @@ ReactDOM.render(
 	React.createElement(App, null),
 	document.getElementById('app')
 );
-},{"./components/App":168,"./utils/appAPI.js":175,"react":165,"react-dom":9}],172:[function(require,module,exports){
+},{"./components/App":168,"./utils/appAPI.js":177,"react":165,"react-dom":9}],174:[function(require,module,exports){
 var AppDispatcher = require('../dispatcher/AppDispatcher');
 var AppConstants = require('../constants/AppConstants');
 var EventEmitter = require('events').EventEmitter;
@@ -20554,6 +20624,10 @@ var AppStore = assign({}, EventEmitter.prototype, {
 	},
 	setContacts: function(contacts){
 		_contacts = contacts;
+	},
+	removeContact: function(contactId){
+		var index = _contacts.findIndex(x => x.id === contactId);
+		_contacts.splice(index, 1);
 	},
 	emitChange: function(){
 		this.emit(CHANGE_EVENT);
@@ -20592,13 +20666,26 @@ AppDispatcher.register(function(payload){
 			//Emit change
 			AppStore.emit(CHANGE_EVENT);
 			break;
+
+		case AppConstants.REMOVE_CONTACT:
+			console.log('Deleting contact...');
+
+			// Store Remove
+			AppStore.removeContact(action.contactId);
+
+			//API Remove
+			AppAPI.removeContact(action.contactId);
+
+			//Emit change
+			AppStore.emit(CHANGE_EVENT);
+			break;
 	}
 
 	return true;
 });
 
 module.exports = AppStore;
-},{"../constants/AppConstants":169,"../dispatcher/AppDispatcher":170,"../utils/AppAPI.js":173,"events":1,"object-assign":8}],173:[function(require,module,exports){
+},{"../constants/AppConstants":171,"../dispatcher/AppDispatcher":172,"../utils/AppAPI.js":175,"events":1,"object-assign":8}],175:[function(require,module,exports){
 var Firebase = require('./FbApp.js');
 var AppActions = require('../actions/AppActions');
 
@@ -20624,9 +20711,13 @@ module.exports = {
 				AppActions.receiveContacts(contacts);
 			});
 		});
+	},
+	removeContact: function(contactId){
+		var firebaseRef = Firebase.ref('/contacts/'+ contactId);
+		firebaseRef.remove(); 
 	}
 }
-},{"../actions/AppActions":166,"./FbApp.js":174}],174:[function(require,module,exports){
+},{"../actions/AppActions":166,"./FbApp.js":176}],176:[function(require,module,exports){
 var Firebase = require('firebase');
 //require("firebase/database");
 
@@ -20639,7 +20730,7 @@ var config = {
 var FbApp = Firebase.initializeApp(config);
 module.exports = FbApp.database();
 
-},{"firebase":3}],175:[function(require,module,exports){
+},{"firebase":3}],177:[function(require,module,exports){
 var Firebase = require('./FbApp.js');
 var AppActions = require('../actions/AppActions');
 
@@ -20665,6 +20756,10 @@ module.exports = {
 				AppActions.receiveContacts(contacts);
 			});
 		});
+	},
+	removeContact: function(contactId){
+		var firebaseRef = Firebase.ref('/contacts/'+ contactId);
+		firebaseRef.remove(); 
 	}
 }
-},{"../actions/AppActions":166,"./FbApp.js":174}]},{},[171]);
+},{"../actions/AppActions":166,"./FbApp.js":176}]},{},[173]);

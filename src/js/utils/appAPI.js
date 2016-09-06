@@ -23,5 +23,9 @@ module.exports = {
 				AppActions.receiveContacts(contacts);
 			});
 		});
+	},
+	removeContact: function(contactId){
+		var firebaseRef = Firebase.ref('/contacts/'+ contactId);
+		firebaseRef.remove(); 
 	}
 }
