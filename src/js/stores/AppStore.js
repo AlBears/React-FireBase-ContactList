@@ -29,6 +29,14 @@ var AppStore = assign({}, EventEmitter.prototype, {
 	getContactToEdit: function(){
 		return _contact_to_edit;
 	},
+	updateContact: function(contact){
+		for(i=0;i < _contacts.length;i++){
+			if(_contacts[i].id == contact.id){
+				_contacts.splice(i, 1);
+				_contacts.push(contact);
+			}
+		}
+	},
 	emitChange: function(){
 		this.emit(CHANGE_EVENT);
 	},
@@ -86,6 +94,19 @@ AppDispatcher.register(function(payload){
 			AppStore.setContactToEdit(action.contact);
 
 			//Emit change
+			AppStore.emit(CHANGE_EVENT);
+			break;
+
+		case AppConstants.UPDATE_CONTACT:
+			console.log('Updating Contact...');
+
+			// Store Update
+			AppStore.updateContact(action.contact);
+
+			// API Update
+			AppAPI.updateContact(action.contact);
+
+			//Emit Change
 			AppStore.emit(CHANGE_EVENT);
 			break;
 	}

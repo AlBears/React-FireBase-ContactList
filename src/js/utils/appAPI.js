@@ -26,6 +26,17 @@ module.exports = {
 	},
 	removeContact: function(contactId){
 		var firebaseRef = Firebase.ref('/contacts/'+ contactId);
-		firebaseRef.remove(); 
+		firebaseRef.remove();
+	},
+
+	updateContact: function(contact){
+		var id = contact.id;
+		var updatedContact = {
+			name: contact.name,
+			phone: contact.phone,
+			email: contact.email
+		}
+		var firebaseref = Firebase.ref('/contacts/'+ contact.id+'/contact');
+		firebaseref.update(updatedContact);
 	}
 }

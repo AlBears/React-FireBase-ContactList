@@ -20429,12 +20429,17 @@ var AppActions = {
       actionType: AppConstants.EDIT_CONTACT,
       contact: contact
     });
-
-  }
+  },
+  updateContact: function(contact){
+		AppDispatcher.handleViewAction({
+			actionType: AppConstants.UPDATE_CONTACT,
+			contact: contact
+		});
+	},
 }
 
 module.exports = AppActions;
-},{"../constants/AppConstants":171,"../dispatcher/AppDispatcher":172}],167:[function(require,module,exports){
+},{"../constants/AppConstants":172,"../dispatcher/AppDispatcher":173}],167:[function(require,module,exports){
 var React = require('react');
 var AppActions = require('../actions/AppActions');
 var AppStore = require('../stores/AppStore');
@@ -20472,11 +20477,12 @@ var AddForm = React.createClass({displayName: "AddForm",
 
 module.exports = AddForm;
 
-},{"../actions/AppActions":166,"../stores/AppStore":174,"react":165}],168:[function(require,module,exports){
+},{"../actions/AppActions":166,"../stores/AppStore":175,"react":165}],168:[function(require,module,exports){
 var React = require('react');
 var AppActions = require('../actions/AppActions');
 var AppStore = require('../stores/AppStore');
 var AddForm = require('./AddForm.js');
+var EditForm = require('./EditForm.js');
 var ContactList = require('./ContactList.js');
 
 function getAppState(){
@@ -20520,7 +20526,7 @@ var App = React.createClass({displayName: "App",
 });
 
 module.exports = App;
-},{"../actions/AppActions":166,"../stores/AppStore":174,"./AddForm.js":167,"./ContactList.js":170,"react":165}],169:[function(require,module,exports){
+},{"../actions/AppActions":166,"../stores/AppStore":175,"./AddForm.js":167,"./ContactList.js":170,"./EditForm.js":171,"react":165}],169:[function(require,module,exports){
 var React = require('react');
 var AppActions = require('../actions/AppActions');
 var AppStore = require('../stores/AppStore');
@@ -20548,7 +20554,7 @@ var Contact = React.createClass({displayName: "Contact",
 
 module.exports = Contact;
 
-},{"../actions/AppActions":166,"../stores/AppStore":174,"react":165}],170:[function(require,module,exports){
+},{"../actions/AppActions":166,"../stores/AppStore":175,"react":165}],170:[function(require,module,exports){
 var React = require('react');
 var AppActions = require('../actions/AppActions');
 var AppStore = require('../stores/AppStore');
@@ -20586,14 +20592,60 @@ var ContactList = React.createClass({displayName: "ContactList",
 
 module.exports = ContactList;
 
-},{"../actions/AppActions":166,"../stores/AppStore":174,"./Contact.js":169,"react":165}],171:[function(require,module,exports){
+},{"../actions/AppActions":166,"../stores/AppStore":175,"./Contact.js":169,"react":165}],171:[function(require,module,exports){
+var React = require('react');
+var AppActions = require('../actions/AppActions');
+var AppStore = require('../stores/AppStore');
+
+var EditForm = React.createClass({displayName: "EditForm",
+	render: function(){
+		return(
+			React.createElement("div", {className: "well"}, 
+        React.createElement("h3", null, "Edit Contact"), 
+        React.createElement("form", {onSubmit: this.handleSubmit}, 
+            React.createElement("div", {className: "form-group"}, 
+              React.createElement("input", {type: "text", ref: "name", onChange: this.handleChange.bind(this, 'name'), value: this.props.contactToEdit.name, className: "form-control", placeholder: "Edit Name..."})
+            ), 
+            React.createElement("div", {className: "form-group"}, 
+              React.createElement("input", {type: "text", ref: "phone", onChange: this.handleChange.bind(this, 'phone'), value: this.props.contactToEdit.phone, className: "form-control", placeholder: "Edit Phone..."})
+            ), 
+            React.createElement("div", {className: "form-group"}, 
+              React.createElement("input", {type: "text", ref: "email", onChange: this.handleChange.bind(this, 'email'), value: this.props.contactToEdit.email, className: "form-control", placeholder: "Edit Email..."})
+            ), 
+            React.createElement("button", {type: "submit", className: "btn btn-primary"}, "Submit")
+        )
+			)
+		);
+	},
+  handleChange: function(fieldName, event){
+    var newState = event.target.value;
+    var selected = this.state.selected;
+    selected.name = newState;
+    this.setState({selected: selected});
+  },
+  handleSubmit: function(e){
+    e.preventDefault();
+    var contact = {
+      id: this.props.contactToEdit.id,
+      name: this.refs.name.value.trim(),
+      email: this.refs.email.value.trim(),
+      phone: this.refs.phone.value.trim(),
+    }
+    AppActions.updateContact(contact);
+  }
+});
+
+module.exports = EditForm;
+
+},{"../actions/AppActions":166,"../stores/AppStore":175,"react":165}],172:[function(require,module,exports){
 module.exports = {
 	SAVE_CONTACT: 'SAVE_CONTACT',
 	RECEIVE_CONTACTS: 'RECEIVE_CONTACTS',
 	REMOVE_CONTACT: 'REMOVE_CONTACT',
-	EDIT_CONTACT: 'EDIT_CONTACT'
+	EDIT_CONTACT: 'EDIT_CONTACT',
+	UPDATE_CONTACT: 'UPDATE_CONTACT'
 }
-},{}],172:[function(require,module,exports){
+},{}],173:[function(require,module,exports){
 var Dispatcher = require('flux').Dispatcher;
 var assign = require('object-assign');
 
@@ -20609,7 +20661,7 @@ var AppDispatcher = assign(new Dispatcher(),{
 
 module.exports = AppDispatcher;
 
-},{"flux":5,"object-assign":8}],173:[function(require,module,exports){
+},{"flux":5,"object-assign":8}],174:[function(require,module,exports){
 var App = require('./components/App');
 var React = require('react');
 var ReactDOM = require('react-dom');
@@ -20622,7 +20674,7 @@ ReactDOM.render(
 	React.createElement(App, null),
 	document.getElementById('app')
 );
-},{"./components/App":168,"./utils/appAPI.js":177,"react":165,"react-dom":9}],174:[function(require,module,exports){
+},{"./components/App":168,"./utils/appAPI.js":178,"react":165,"react-dom":9}],175:[function(require,module,exports){
 var AppDispatcher = require('../dispatcher/AppDispatcher');
 var AppConstants = require('../constants/AppConstants');
 var EventEmitter = require('events').EventEmitter;
@@ -20653,6 +20705,14 @@ var AppStore = assign({}, EventEmitter.prototype, {
 	},
 	getContactToEdit: function(){
 		return _contact_to_edit;
+	},
+	updateContact: function(contact){
+		for(i=0;i < _contacts.length;i++){
+			if(_contacts[i].id == contact.id){
+				_contacts.splice(i, 1);
+				_contacts.push(contact);
+			}
+		}
 	},
 	emitChange: function(){
 		this.emit(CHANGE_EVENT);
@@ -20713,13 +20773,26 @@ AppDispatcher.register(function(payload){
 			//Emit change
 			AppStore.emit(CHANGE_EVENT);
 			break;
+
+		case AppConstants.UPDATE_CONTACT:
+			console.log('Updating Contact...');
+
+			// Store Update
+			AppStore.updateContact(action.contact);
+
+			// API Update
+			AppAPI.updateContact(action.contact);
+
+			//Emit Change
+			AppStore.emit(CHANGE_EVENT);
+			break;
 	}
 
 	return true;
 });
 
 module.exports = AppStore;
-},{"../constants/AppConstants":171,"../dispatcher/AppDispatcher":172,"../utils/AppAPI.js":175,"events":1,"object-assign":8}],175:[function(require,module,exports){
+},{"../constants/AppConstants":172,"../dispatcher/AppDispatcher":173,"../utils/AppAPI.js":176,"events":1,"object-assign":8}],176:[function(require,module,exports){
 var Firebase = require('./FbApp.js');
 var AppActions = require('../actions/AppActions');
 
@@ -20748,10 +20821,21 @@ module.exports = {
 	},
 	removeContact: function(contactId){
 		var firebaseRef = Firebase.ref('/contacts/'+ contactId);
-		firebaseRef.remove(); 
+		firebaseRef.remove();
+	},
+
+	updateContact: function(contact){
+		var id = contact.id;
+		var updatedContact = {
+			name: contact.name,
+			phone: contact.phone,
+			email: contact.email
+		}
+		var firebaseref = Firebase.ref('/contacts/'+ contact.id+'/contact');
+		firebaseref.update(updatedContact);
 	}
 }
-},{"../actions/AppActions":166,"./FbApp.js":176}],176:[function(require,module,exports){
+},{"../actions/AppActions":166,"./FbApp.js":177}],177:[function(require,module,exports){
 var Firebase = require('firebase');
 //require("firebase/database");
 
@@ -20764,7 +20848,7 @@ var config = {
 var FbApp = Firebase.initializeApp(config);
 module.exports = FbApp.database();
 
-},{"firebase":3}],177:[function(require,module,exports){
+},{"firebase":3}],178:[function(require,module,exports){
 var Firebase = require('./FbApp.js');
 var AppActions = require('../actions/AppActions');
 
@@ -20793,7 +20877,18 @@ module.exports = {
 	},
 	removeContact: function(contactId){
 		var firebaseRef = Firebase.ref('/contacts/'+ contactId);
-		firebaseRef.remove(); 
+		firebaseRef.remove();
+	},
+
+	updateContact: function(contact){
+		var id = contact.id;
+		var updatedContact = {
+			name: contact.name,
+			phone: contact.phone,
+			email: contact.email
+		}
+		var firebaseref = Firebase.ref('/contacts/'+ contact.id+'/contact');
+		firebaseref.update(updatedContact);
 	}
 }
-},{"../actions/AppActions":166,"./FbApp.js":176}]},{},[173]);
+},{"../actions/AppActions":166,"./FbApp.js":177}]},{},[174]);
