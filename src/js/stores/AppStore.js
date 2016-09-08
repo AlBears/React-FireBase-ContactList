@@ -7,6 +7,7 @@ var AppAPI = require('../utils/AppAPI.js');
 var CHANGE_EVENT = 'change';
 
 var _contacts = [];
+var _contact_to_edit = '';
 
 var AppStore = assign({}, EventEmitter.prototype, {
 	getContacts: function(){
@@ -21,6 +22,12 @@ var AppStore = assign({}, EventEmitter.prototype, {
 	removeContact: function(contactId){
 		var index = _contacts.findIndex(x => x.id === contactId);
 		_contacts.splice(index, 1);
+	},
+	setContactToEdit: function(contact){
+		_contact_to_edit = contact;
+	},
+	getContactToEdit: function(){
+		return _contact_to_edit;
 	},
 	emitChange: function(){
 		this.emit(CHANGE_EVENT);
@@ -68,6 +75,15 @@ AppDispatcher.register(function(payload){
 
 			//API Remove
 			AppAPI.removeContact(action.contactId);
+
+			//Emit change
+			AppStore.emit(CHANGE_EVENT);
+			break;
+
+		case AppConstants.EDIT_CONTACT:
+
+			// Store Remove
+			AppStore.setContactToEdit(action.contact);
 
 			//Emit change
 			AppStore.emit(CHANGE_EVENT);

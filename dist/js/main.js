@@ -20423,6 +20423,13 @@ var AppActions = {
       actionType: AppConstants.REMOVE_CONTACT,
       contactId: contactId
     });
+  },
+  editContact: function(contact){
+    AppDispatcher.handleViewAction({
+      actionType: AppConstants.EDIT_CONTACT,
+      contact: contact
+    });
+
   }
 }
 
@@ -20474,7 +20481,8 @@ var ContactList = require('./ContactList.js');
 
 function getAppState(){
 	return {
-		contacts: AppStore.getContacts()
+		contacts: AppStore.getContacts(),
+		contactToEdit: AppStore.getContactToEdit()
 	}
 }
 
@@ -20492,9 +20500,14 @@ var App = React.createClass({displayName: "App",
 	},
 
 	render: function(){
+		if(this.state.contactToEdit == ''){
+			var form = React.createElement(AddForm, null)
+		} else {
+			var form = React.createElement(EditForm, {contactToEdit: this.state.contactToEdit})
+		}
 		return(
 			React.createElement("div", null, 
-				React.createElement(AddForm, null), 
+				form, 
 				React.createElement(ContactList, {contacts: this.state.contacts})
 			)
 		);
@@ -20519,13 +20532,17 @@ var Contact = React.createClass({displayName: "Contact",
 				React.createElement("td", null, this.props.contact.name), 
 				React.createElement("td", null, this.props.contact.phone), 
 				React.createElement("td", null, this.props.contact.email), 
-				React.createElement("td", null, React.createElement("a", {href: "#", className: "btn btn-default", onClick: this.handleEdit}, "Edit"), " ", React.createElement("a", {href: "#", className: "btn btn-danger", onClick: this.handleRemove.bind(this, this.props.contact.id)}, "Remove"))
+				React.createElement("td", null, React.createElement("a", {href: "#", className: "btn btn-default", onClick: this.handleEdit.bind(this, this.props.contact)}, "Edit"), " ", React.createElement("a", {href: "#", className: "btn btn-danger", onClick: this.handleRemove.bind(this, this.props.contact.id)}, "Remove"))
 			)
 		);
 	},
 
 	handleRemove: function(i, j){
 		AppActions.removeContact(i);
+	},
+
+	handleEdit: function(i, j){
+		AppActions.editContact(i);
 	}
 });
 
@@ -20539,7 +20556,7 @@ var Contact = require('./Contact.js');
 
 var ContactList = React.createClass({displayName: "ContactList",
 	render: function(){
-    console.log(this.props);
+    //console.log(this.props);
 		return(
 			React.createElement("div", null, 
 				React.createElement("h3", null, "Contacts"), 
@@ -20573,7 +20590,8 @@ module.exports = ContactList;
 module.exports = {
 	SAVE_CONTACT: 'SAVE_CONTACT',
 	RECEIVE_CONTACTS: 'RECEIVE_CONTACTS',
-	REMOVE_CONTACT: 'REMOVE_CONTACT'
+	REMOVE_CONTACT: 'REMOVE_CONTACT',
+	EDIT_CONTACT: 'EDIT_CONTACT'
 }
 },{}],172:[function(require,module,exports){
 var Dispatcher = require('flux').Dispatcher;
@@ -20614,6 +20632,7 @@ var AppAPI = require('../utils/AppAPI.js');
 var CHANGE_EVENT = 'change';
 
 var _contacts = [];
+var _contact_to_edit = '';
 
 var AppStore = assign({}, EventEmitter.prototype, {
 	getContacts: function(){
@@ -20628,6 +20647,12 @@ var AppStore = assign({}, EventEmitter.prototype, {
 	removeContact: function(contactId){
 		var index = _contacts.findIndex(x => x.id === contactId);
 		_contacts.splice(index, 1);
+	},
+	setContactToEdit: function(contact){
+		_contact_to_edit = contact;
+	},
+	getContactToEdit: function(){
+		return _contact_to_edit;
 	},
 	emitChange: function(){
 		this.emit(CHANGE_EVENT);
@@ -20675,6 +20700,15 @@ AppDispatcher.register(function(payload){
 
 			//API Remove
 			AppAPI.removeContact(action.contactId);
+
+			//Emit change
+			AppStore.emit(CHANGE_EVENT);
+			break;
+
+		case AppConstants.EDIT_CONTACT:
+
+			// Store Remove
+			AppStore.setContactToEdit(action.contact);
 
 			//Emit change
 			AppStore.emit(CHANGE_EVENT);

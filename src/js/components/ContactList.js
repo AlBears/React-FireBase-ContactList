@@ -5,7 +5,7 @@ var Contact = require('./Contact.js');
 
 var ContactList = React.createClass({
 	render: function(){
-    console.log(this.props);
+    //console.log(this.props);
 		return(
 			<div>
 				<h3>Contacts</h3>
